@@ -1,14 +1,11 @@
 
-TIMESERIES = readRDS("app/Modeller/TIMESERIES.rds")
-
-
-
-TIMESERIES$clean <- function(TIMESERIES,
+CALLCENTER <- list()
+CALLCENTER$clean <- function(CALLCENTER,
                              Y,
                              Datum){
   df = data.frame(val = c(Y,rep(-1,28)))
   df$Datum = as.Date(as.numeric(as.Date(Datum)) -1 + 1:nrow(df))
-  df$X = 1:nrow(df) + as.numeric(as.Date(Datum)) - as.numeric(as.Date(TIMESERIES$Datum_train))
+  df$X = 1:nrow(df) + as.numeric(as.Date(Datum)) - as.numeric(as.Date(CALLCENTER$Datum_train))
   DAY = as.Date(max(df$Datum))
   
   for(i in 1:31){
@@ -37,11 +34,11 @@ TIMESERIES$clean <- function(TIMESERIES,
   return(df)
 }
 
-TIMESERIES$Train.model <- function(TIMESERIES,
+CALLCENTER$Train.model <- function(CALLCENTER,
                                    data,
                                    LONG = F,
                                    tau = c(0.025,0.975)){
-  data = data[TIMESERIES$TRAIN,]
+  data = data[CALLCENTER$TRAIN,]
   data_stored = data
   W = seq(1,2,1/(nrow(data)-1))
   set.seed(2243412)
@@ -58,11 +55,11 @@ TIMESERIES$Train.model <- function(TIMESERIES,
   
   
   
-  M = TIMESERIES$analyze_glmnet(M)
+  M = CALLCENTER$analyze_glmnet(M)
   M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
   
   if(LONG){
-    TIMESERIES$Model_P = M
+    CALLCENTER$Model_P = M
     
     M = glmnetUtils::cv.glmnet(val ~ . - Datum  +
                                  pmin(day_nr,8) + pmin(pmax(day_nr,8),16) +  
@@ -73,19 +70,19 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                alpha = 1)
     
     
-    M = TIMESERIES$analyze_glmnet(M)
+    M = CALLCENTER$analyze_glmnet(M)
     M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
     
-    TIMESERIES$Model_G = M
+    CALLCENTER$Model_G = M
     
-    data$pred_p = predict(TIMESERIES$Model_P,
+    data$pred_p = predict(CALLCENTER$Model_P,
                           data,
-                          s = TIMESERIES$Model_P$my_lambda,
+                          s = CALLCENTER$Model_P$my_lambda,
                           type = "response")
     
-    data$pred_g = predict(TIMESERIES$Model_G,
+    data$pred_g = predict(CALLCENTER$Model_G,
                           data,
-                          s = TIMESERIES$Model_G$my_lambda,
+                          s = CALLCENTER$Model_G$my_lambda,
                           type = "response")
     
     M = glmnetUtils::cv.glmnet(val ~ pred_g +pred_p,
@@ -95,14 +92,14 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                weights = W,
                                data = data,
                                alpha = 1)
-    M = TIMESERIES$analyze_glmnet(M,1) 
+    M = CALLCENTER$analyze_glmnet(M,1) 
   }
   
-  TIMESERIES$Model = M
+  CALLCENTER$Model = M
   
-  data$pred = predict(TIMESERIES$Model,
+  data$pred = predict(CALLCENTER$Model,
                       data,
-                      s = TIMESERIES$Model$my_lambda,
+                      s = CALLCENTER$Model$my_lambda,
                       type = "response")
   data$error = data$val - data$pred
   # data$error_1 = -1
@@ -120,7 +117,7 @@ TIMESERIES$Train.model <- function(TIMESERIES,
            data = data)
   }
   M$model = M$y = M$x = M$residuals = M$fitted.values = NULL
-  TIMESERIES$Model.quantile = M
+  CALLCENTER$Model.quantile = M
   
   
   
@@ -136,11 +133,11 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                              alpha = 1)
   
   
-  M = TIMESERIES$analyze_glmnet(M)
+  M = CALLCENTER$analyze_glmnet(M)
   M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
   
   if(LONG){
-    TIMESERIES$Model_P3 = M
+    CALLCENTER$Model_P3 = M
     
     M = glmnetUtils::cv.glmnet(val ~ . - Datum  +
                                  pmin(day_nr,8) + pmin(pmax(day_nr,8),16) + 
@@ -151,19 +148,19 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                alpha = 1)
     
     
-    M = TIMESERIES$analyze_glmnet(M)
+    M = CALLCENTER$analyze_glmnet(M)
     M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
     
-    TIMESERIES$Model_G3 = M
+    CALLCENTER$Model_G3 = M
     
-    data_3$pred_p = predict(TIMESERIES$Model_P3,
+    data_3$pred_p = predict(CALLCENTER$Model_P3,
                             data_3,
-                            s = TIMESERIES$Model_P3$my_lambda,
+                            s = CALLCENTER$Model_P3$my_lambda,
                             type = "response")
     
-    data_3$pred_g = predict(TIMESERIES$Model_G3,
+    data_3$pred_g = predict(CALLCENTER$Model_G3,
                             data_3,
-                            s = TIMESERIES$Model_G3$my_lambda,
+                            s = CALLCENTER$Model_G3$my_lambda,
                             type = "response")
     M = glmnetUtils::cv.glmnet(val ~ pred_g+pred_p,
                                family = gaussian(),
@@ -172,14 +169,14 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                weights = W,
                                data = data_3,
                                alpha = 1)
-    M = TIMESERIES$analyze_glmnet(M,1)
+    M = CALLCENTER$analyze_glmnet(M,1)
   }
   
-  TIMESERIES$Model3 = M
+  CALLCENTER$Model3 = M
   
-  data_3$pred_3 = predict(TIMESERIES$Model3,
+  data_3$pred_3 = predict(CALLCENTER$Model3,
                           data_3,
-                          s = TIMESERIES$Model3$my_lambda,
+                          s = CALLCENTER$Model3$my_lambda,
                           type = "response")
   
   data_3$error = data_3$val - data_3$pred_3
@@ -194,7 +191,7 @@ TIMESERIES$Train.model <- function(TIMESERIES,
   }
   M$model = M$y = M$x = M$residuals = M$fitted.values = NULL
   
-  TIMESERIES$Model.quantile3 = M
+  CALLCENTER$Model.quantile3 = M
   
   
   
@@ -215,11 +212,11 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                              alpha = 1)
   
   
-  M = TIMESERIES$analyze_glmnet(M)
+  M = CALLCENTER$analyze_glmnet(M)
   M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
   
   if(LONG){
-    TIMESERIES$Model_P7 = M
+    CALLCENTER$Model_P7 = M
     
     M = glmnetUtils::cv.glmnet(val ~ . - Datum  +
                                  pmin(day_nr,8) + pmin(pmax(day_nr,8),16) + 
@@ -230,19 +227,19 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                alpha = 1)
     
     
-    M = TIMESERIES$analyze_glmnet(M)
+    M = CALLCENTER$analyze_glmnet(M)
     M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
     
-    TIMESERIES$Model_G7 = M
+    CALLCENTER$Model_G7 = M
     
-    data_7$pred_p = predict(TIMESERIES$Model_P7,
+    data_7$pred_p = predict(CALLCENTER$Model_P7,
                             data_7,
-                            s = TIMESERIES$Model_P7$my_lambda,
+                            s = CALLCENTER$Model_P7$my_lambda,
                             type = "response")
     
-    data_7$pred_g = predict(TIMESERIES$Model_G7,
+    data_7$pred_g = predict(CALLCENTER$Model_G7,
                             data_7,
-                            s = TIMESERIES$Model_G7$my_lambda,
+                            s = CALLCENTER$Model_G7$my_lambda,
                             type = "response")
     M = glmnetUtils::cv.glmnet(val ~ pred_g+pred_p,
                                family = gaussian(),
@@ -251,13 +248,13 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                weights = W,
                                data = data_7,
                                alpha = 1)
-    M = TIMESERIES$analyze_glmnet(M,1)
+    M = CALLCENTER$analyze_glmnet(M,1)
   }
-  TIMESERIES$Model7 = M
+  CALLCENTER$Model7 = M
   
-  data_7$pred_7 = predict(TIMESERIES$Model7,
+  data_7$pred_7 = predict(CALLCENTER$Model7,
                           data_7,
-                          s = TIMESERIES$Model7$my_lambda,
+                          s = CALLCENTER$Model7$my_lambda,
                           type = "response")
   
   data_7$error = data_7$val - data_7$pred_7
@@ -273,7 +270,7 @@ TIMESERIES$Train.model <- function(TIMESERIES,
   }
   M$model = M$y = M$x = M$residuals = M$fitted.values = NULL
   
-  TIMESERIES$Model.quantile7 = M
+  CALLCENTER$Model.quantile7 = M
   
   
   
@@ -290,11 +287,11 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                              alpha = 1)
   
   
-  M = TIMESERIES$analyze_glmnet(M)
+  M = CALLCENTER$analyze_glmnet(M)
   M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
   
   if(LONG){
-    TIMESERIES$Model_P28 = M
+    CALLCENTER$Model_P28 = M
     
     M = glmnetUtils::cv.glmnet(val ~ . - Datum  +
                                  pmin(day_nr,8) + pmin(pmax(day_nr,8),16) + 
@@ -305,19 +302,19 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                alpha = 1)
     
     
-    M = TIMESERIES$analyze_glmnet(M)
+    M = CALLCENTER$analyze_glmnet(M)
     M$glmnet.fit$dev.ratio[M$my_lambda == M$lambda]
     
-    TIMESERIES$Model_G28 = M
+    CALLCENTER$Model_G28 = M
     
-    data_28$pred_p = predict(TIMESERIES$Model_P28,
+    data_28$pred_p = predict(CALLCENTER$Model_P28,
                              data_28,
-                             s = TIMESERIES$Model_P28$my_lambda,
+                             s = CALLCENTER$Model_P28$my_lambda,
                              type = "response")
     
-    data_28$pred_g = predict(TIMESERIES$Model_G28,
+    data_28$pred_g = predict(CALLCENTER$Model_G28,
                              data_28,
-                             s = TIMESERIES$Model_G28$my_lambda,
+                             s = CALLCENTER$Model_G28$my_lambda,
                              type = "response")
     
     
@@ -328,13 +325,13 @@ TIMESERIES$Train.model <- function(TIMESERIES,
                                weights = W,
                                data = data_28,
                                alpha = 1)
-    M = TIMESERIES$analyze_glmnet(M,1)
+    M = CALLCENTER$analyze_glmnet(M,1)
   }
-  TIMESERIES$Model28 = M
+  CALLCENTER$Model28 = M
   
-  data_28$pred_28 = predict(TIMESERIES$Model28,
+  data_28$pred_28 = predict(CALLCENTER$Model28,
                             data_28,
-                            s = TIMESERIES$Model28$my_lambda,
+                            s = CALLCENTER$Model28$my_lambda,
                             type = "response")
   
   data_28$error = data_28$val - data_28$pred_28
@@ -349,13 +346,13 @@ TIMESERIES$Train.model <- function(TIMESERIES,
            data = data_28)
   }
   M$model = M$y = M$x = M$residuals = M$fitted.values = NULL
-  TIMESERIES$Model.quantile28 = M
+  CALLCENTER$Model.quantile28 = M
   
   M = data_stored = data_28 = data_7 = data_3 = data = W = NULL
-  return(TIMESERIES)
+  return(CALLCENTER)
 }
 
-TIMESERIES$predict <- function(TIMESERIES,
+CALLCENTER$predict <- function(CALLCENTER,
                                data,
                                LONG = F){
   
@@ -364,97 +361,97 @@ TIMESERIES$predict <- function(TIMESERIES,
   
   # 1
   if(LONG){
-    data$pred_p = predict(TIMESERIES$Model_P,
+    data$pred_p = predict(CALLCENTER$Model_P,
                           data,
-                          s = TIMESERIES$Model_P$my_lambda,
+                          s = CALLCENTER$Model_P$my_lambda,
                           type = "response")
     
-    data$pred_g = predict(TIMESERIES$Model_G,
+    data$pred_g = predict(CALLCENTER$Model_G,
                           data,
-                          s = TIMESERIES$Model_G$my_lambda,
+                          s = CALLCENTER$Model_G$my_lambda,
                           type = "response")
   }
   
-  data$pred = predict(TIMESERIES$Model,
+  data$pred = predict(CALLCENTER$Model,
                       data,
-                      s = TIMESERIES$Model$my_lambda,
+                      s = CALLCENTER$Model$my_lambda,
                       type = "response")
-  data$pred_UQ = predict(TIMESERIES$Model.quantile,data)[,2] + data$pred
-  data$pred_LQ = predict(TIMESERIES$Model.quantile,data)[,1] + data$pred
+  data$pred_UQ = predict(CALLCENTER$Model.quantile,data)[,2] + data$pred
+  data$pred_LQ = predict(CALLCENTER$Model.quantile,data)[,1] + data$pred
   
   
   
   # 3
   if(LONG){
-    data$pred_p = predict(TIMESERIES$Model_P3,
+    data$pred_p = predict(CALLCENTER$Model_P3,
                           data,
-                          s = TIMESERIES$Model_P3$my_lambda,
+                          s = CALLCENTER$Model_P3$my_lambda,
                           type = "response")
     
-    data$pred_g = predict(TIMESERIES$Model_G3,
+    data$pred_g = predict(CALLCENTER$Model_G3,
                           data,
-                          s = TIMESERIES$Model_G3$my_lambda,
+                          s = CALLCENTER$Model_G3$my_lambda,
                           type = "response")
   }
   
-  data$pred_3 = predict(TIMESERIES$Model3,
+  data$pred_3 = predict(CALLCENTER$Model3,
                         data,
-                        s = TIMESERIES$Model3$my_lambda,
+                        s = CALLCENTER$Model3$my_lambda,
                         type = "response")
-  data$pred_UQ3 = predict(TIMESERIES$Model.quantile3,data)[,2] + data$pred_3
-  data$pred_LQ3 = predict(TIMESERIES$Model.quantile3,data)[,1] + data$pred_3
+  data$pred_UQ3 = predict(CALLCENTER$Model.quantile3,data)[,2] + data$pred_3
+  data$pred_LQ3 = predict(CALLCENTER$Model.quantile3,data)[,1] + data$pred_3
   
   
   
   
   # 7
   if(LONG){
-    data$pred_p = predict(TIMESERIES$Model_P7,
+    data$pred_p = predict(CALLCENTER$Model_P7,
                           data,
-                          s = TIMESERIES$Model_P7$my_lambda,
+                          s = CALLCENTER$Model_P7$my_lambda,
                           type = "response")
     
-    data$pred_g = predict(TIMESERIES$Model_G7,
+    data$pred_g = predict(CALLCENTER$Model_G7,
                           data,
-                          s = TIMESERIES$Model_G7$my_lambda,
+                          s = CALLCENTER$Model_G7$my_lambda,
                           type = "response")
   }
-  data$pred_7 = predict(TIMESERIES$Model7,
+  data$pred_7 = predict(CALLCENTER$Model7,
                         data,
-                        s = TIMESERIES$Model7$my_lambda,
+                        s = CALLCENTER$Model7$my_lambda,
                         type = "response")
-  data$pred_UQ7 = predict(TIMESERIES$Model.quantile7,data)[,2] + data$pred_7
-  data$pred_LQ7 = predict(TIMESERIES$Model.quantile7,data)[,1] + data$pred_7
+  data$pred_UQ7 = predict(CALLCENTER$Model.quantile7,data)[,2] + data$pred_7
+  data$pred_LQ7 = predict(CALLCENTER$Model.quantile7,data)[,1] + data$pred_7
   
   
   # 28
   if(LONG){
-    data$pred_p = predict(TIMESERIES$Model_P28,
+    data$pred_p = predict(CALLCENTER$Model_P28,
                           data,
-                          s = TIMESERIES$Model_P28$my_lambda,
+                          s = CALLCENTER$Model_P28$my_lambda,
                           type = "response")
     
-    data$pred_g = predict(TIMESERIES$Model_G28,
+    data$pred_g = predict(CALLCENTER$Model_G28,
                           data,
-                          s = TIMESERIES$Model_G28$my_lambda,
+                          s = CALLCENTER$Model_G28$my_lambda,
                           type = "response")
   }
   
-  data$pred_28 = predict(TIMESERIES$Model28,
+  data$pred_28 = predict(CALLCENTER$Model28,
                          data,
-                         s = TIMESERIES$Model28$my_lambda,
+                         s = CALLCENTER$Model28$my_lambda,
                          type = "response")
-  data$pred_UQ28 = predict(TIMESERIES$Model.quantile28,data)[,2] + data$pred_28
-  data$pred_LQ28 = predict(TIMESERIES$Model.quantile28,data)[,1] + data$pred_28
+  data$pred_UQ28 = predict(CALLCENTER$Model.quantile28,data)[,2] + data$pred_28
+  data$pred_LQ28 = predict(CALLCENTER$Model.quantile28,data)[,1] + data$pred_28
   
   
   
   IND = min(which(data$val == -1))
   # data$Y_1[IND + 1] = data$pred[IND]
-  # data$pred[IND + 1] = round(predict(TIMESERIES$Model,
+  # data$pred[IND + 1] = round(predict(CALLCENTER$Model,
   #                                    data[IND + 1,],
   #                                    type = "response",
-  #                                    s = TIMESERIES$Model$my_lambda)[,1],2)
+  #                                    s = CALLCENTER$Model$my_lambda)[,1],2)
   data$pred[IND + 1:2] = data$pred_3[IND + 1:2]
   data$pred_UQ[IND + 1:2] = data$pred_UQ3[IND + 1:2]
   data$pred_LQ[IND + 1:2] = data$pred_LQ3[IND + 1:2]
@@ -468,14 +465,14 @@ TIMESERIES$predict <- function(TIMESERIES,
   data$pred_LQ[IND + 7:27] = data$pred_LQ28[IND + 7:27]
   # data$error_28 = data$val - data$pred_28
   # 
-  # data[,c("q_low_28","q_high_28")] = round(predict(TIMESERIES$Model.quantile_28,
+  # data[,c("q_low_28","q_high_28")] = round(predict(CALLCENTER$Model.quantile_28,
   #                                            data),3)
   # data$within_28 = data$error_28 <= data$q_high_28 & data$error_28 >= data$q_low_28
   
   return(data)
 }
 
-TIMESERIES$plot <- function(TIMESERIES,
+CALLCENTER$plot <- function(CALLCENTER,
                             data){
   
   # Error lower bound
@@ -516,16 +513,16 @@ TIMESERIES$plot <- function(TIMESERIES,
   #        col = c("red"), lty = 1:1, lwd = 2)
   # 
   #Time series testdata with prediction
-  plot(data$X[TIMESERIES$TEST],data$val[TIMESERIES$TEST],
+  plot(data$X[CALLCENTER$TEST],data$val[CALLCENTER$TEST],
        xlab = "Day (index)", ylab = "Number of obsevations", 
        main = "Observed outcome vs predicted outcome on test data",
        lwd = 2,
        xaxt = "n")
   
-  axis(1, at = data$X[TIMESERIES$TEST][c(1,40,80,120)], labels = data$date[TIMESERIES$TEST][c(1,40,80,120)])
+  axis(1, at = data$X[CALLCENTER$TEST][c(1,40,80,120)], labels = data$date[CALLCENTER$TEST][c(1,40,80,120)])
   
-  lines(data$X[TIMESERIES$TEST],
-        data$pred[TIMESERIES$TEST],
+  lines(data$X[CALLCENTER$TEST],
+        data$pred[CALLCENTER$TEST],
         col = "red",
         lwd = 3)
   
@@ -533,16 +530,16 @@ TIMESERIES$plot <- function(TIMESERIES,
          col = c("black", "red"), lty = 1:1, lwd = 3)
   
   #Time series testdata with prediction
-  plot(data$X[TIMESERIES$TEST],data$val[TIMESERIES$TEST],
+  plot(data$X[CALLCENTER$TEST],data$val[CALLCENTER$TEST],
        xlab = "Day (index)", ylab = "Number of obsevations", 
        main = "Observed outcome vs predicted outcome on test data",
        lwd = 2,
        xaxt = "n")
   
-  axis(1, at = data$X[TIMESERIES$TEST][c(1,40,80,120)], labels = data$date[TIMESERIES$TEST][c(1,40,80,120)])
+  axis(1, at = data$X[CALLCENTER$TEST][c(1,40,80,120)], labels = data$date[CALLCENTER$TEST][c(1,40,80,120)])
   
-  lines(data$X[TIMESERIES$TEST],
-        data$pred_28[TIMESERIES$TEST],
+  lines(data$X[CALLCENTER$TEST],
+        data$pred_28[CALLCENTER$TEST],
         col = "red",
         lwd = 3)
   
@@ -560,15 +557,15 @@ TIMESERIES$plot <- function(TIMESERIES,
   
   axis(1, at = data$X[c(1,201,401,601)], labels = data$date[c(1,201,401,601)])
   
-  lines(data$X[TIMESERIES$TRAIN],
-        data$pred_28[TIMESERIES$TRAIN],
+  lines(data$X[CALLCENTER$TRAIN],
+        data$pred_28[CALLCENTER$TRAIN],
         col = "blue",
         lwd = 3)
-  lines(data$X[TIMESERIES$TEST],
-        data$pred_28[TIMESERIES$TEST],
+  lines(data$X[CALLCENTER$TEST],
+        data$pred_28[CALLCENTER$TEST],
         col = "red",
         lwd = 3)
-  abline(v = min(which(TIMESERIES$TEST)) + min(data$X)- 2,
+  abline(v = min(which(CALLCENTER$TEST)) + min(data$X)- 2,
          col = "red",
          lwd = 2)
   
@@ -586,15 +583,15 @@ TIMESERIES$plot <- function(TIMESERIES,
   
   axis(1, at = data$X[c(1,201,401,601)], labels = data$date[c(1,201,401,601)])
   
-  lines(data$X[TIMESERIES$TRAIN],
-        data$pred_7[TIMESERIES$TRAIN],
+  lines(data$X[CALLCENTER$TRAIN],
+        data$pred_7[CALLCENTER$TRAIN],
         col = "blue",
         lwd = 3)
-  lines(data$X[TIMESERIES$TEST],
-        data$pred_7[TIMESERIES$TEST],
+  lines(data$X[CALLCENTER$TEST],
+        data$pred_7[CALLCENTER$TEST],
         col = "red",
         lwd = 3)
-  abline(v = min(which(TIMESERIES$TEST)) + min(data$X)- 2,
+  abline(v = min(which(CALLCENTER$TEST)) + min(data$X)- 2,
          col = "red",
          lwd = 2)
   
@@ -610,15 +607,15 @@ TIMESERIES$plot <- function(TIMESERIES,
   
   axis(1, at = data$X[c(1,201,401,601)], labels = data$date[c(1,201,401,601)])
   
-  lines(data$X[TIMESERIES$TRAIN],
-        data$pred[TIMESERIES$TRAIN],
+  lines(data$X[CALLCENTER$TRAIN],
+        data$pred[CALLCENTER$TRAIN],
         col = "blue",
         lwd = 3)
-  lines(data$X[TIMESERIES$TEST],
-        data$pred[TIMESERIES$TEST],
+  lines(data$X[CALLCENTER$TEST],
+        data$pred[CALLCENTER$TEST],
         col = "red",
         lwd = 3)
-  abline(v = min(which(TIMESERIES$TEST)) + min(data$X)- 2,
+  abline(v = min(which(CALLCENTER$TEST)) + min(data$X)- 2,
          col = "red",
          lwd = 2)
   
@@ -627,7 +624,7 @@ TIMESERIES$plot <- function(TIMESERIES,
   
 }
 
-TIMESERIES$analyze_glmnet <- function(M,
+CALLCENTER$analyze_glmnet <- function(M,
                                       dev.ratio = 0) {
   # plot(M)
   # plot(M$glmnet.fit, xvar = "dev", label = TRUE)
@@ -649,7 +646,7 @@ TIMESERIES$analyze_glmnet <- function(M,
   
 }
 
-TIMESERIES$R.squared <- function(TIMESERIES,
+CALLCENTER$R.squared <- function(CALLCENTER,
                                  data){
   
   Text = "R-squared on all data:"
@@ -665,15 +662,15 @@ TIMESERIES$R.squared <- function(TIMESERIES,
   Text = paste(Text,"\n",sep = "")
   
   Text = paste(Text,"R-squared on training data:", sep = "\n")
-  Text = paste(Text,round(1-var(data$val[TIMESERIES$TRAIN] - data$pred[TIMESERIES$TRAIN])/var(data$val[TIMESERIES$TRAIN]),3), sep = "\n")
+  Text = paste(Text,round(1-var(data$val[CALLCENTER$TRAIN] - data$pred[CALLCENTER$TRAIN])/var(data$val[CALLCENTER$TRAIN]),3), sep = "\n")
   Text = paste(Text,"\n",sep = "")
   
   Text = paste(Text,"R-squared on test data:", sep = "\n")
-  Text = paste(Text,round(1-var(data$val[TIMESERIES$TEST] - data$pred[TIMESERIES$TEST])/var(data$val[TIMESERIES$TEST]),3), sep = "\n")
+  Text = paste(Text,round(1-var(data$val[CALLCENTER$TEST] - data$pred[CALLCENTER$TEST])/var(data$val[CALLCENTER$TEST]),3), sep = "\n")
   Text = paste(Text,"\n",sep = "")
   
   Text = paste(Text,"Ratio of errors within predicted error limits on test data:", sep = "\n")
-  Text = paste(Text,round(sum(data$within[!TIMESERIES$TEST])/sum(!TIMESERIES$TEST),3), sep = "\n")
+  Text = paste(Text,round(sum(data$within[!CALLCENTER$TEST])/sum(!CALLCENTER$TEST),3), sep = "\n")
   Text = paste(Text,"\n",sep = "")
   
   Text = paste(Text,"Mean width of the prediction interval:", sep = "\n")
@@ -689,7 +686,8 @@ TIMESERIES$R.squared <- function(TIMESERIES,
 
 
 
-
+saveRDS(CALLCENTER,
+        file = "app/Modeller/CALLCENTER.rds")
 
 
 
@@ -708,7 +706,7 @@ mean(OK)
 mean(OK2)
 plot(OK)
 
-sum(data$val[TIMESERIES$TRAIN] < data$pred_UQ[TIMESERIES$TRAIN])/(nrow(data)-28)
+sum(data$val[CALLCENTER$TRAIN] < data$pred_UQ[CALLCENTER$TRAIN])/(nrow(data)-28)
 sum(data$val[TIMESERIES$TRAIN] < data$pred_UQ7[TIMESERIES$TRAIN])/(nrow(data)-28)
 sum(data$val[TIMESERIES$TRAIN] < data$pred_UQ28[TIMESERIES$TRAIN])/(nrow(data)-28)
 

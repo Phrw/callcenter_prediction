@@ -23,16 +23,16 @@ function(input = "1") {
   df = input[[1]]
   FILES = list.files("Modeller/")
 
-  if(paste("TIMESERIES_",df$ID,".rds",sep = "") %in% FILES){
-    TIMESERIES = readRDS(paste("Modeller/TIMESERIES_",df$ID,".rds",sep = ""))
+  if(paste("CALLCENTER_",df$ID,".rds",sep = "") %in% FILES){
+    CALLCENTER = readRDS(paste("Modeller/CALLCENTER_",df$ID,".rds",sep = ""))
 
-    data = TIMESERIES$clean(TIMESERIES,
+    data = CALLCENTER$clean(CALLCENTER,
                             df$Y,
                             df$Datum)
 
-    data = TIMESERIES$predict(TIMESERIES,
+    data = CALLCENTER$predict(CALLCENTER,
                               data,
-			      LONG = TIMESERIES$LONG)
+			      LONG = CALLCENTER$LONG)
 
     my_pred = round(data[data$val == -1,c("pred","pred_LQ","pred_UQ")])
 
@@ -55,26 +55,26 @@ function(input = "1") {
 #* @param input json list
 #* @post /TrainLong
 function(input = "1") {
-  TIMESERIES = readRDS("Modeller/TIMESERIES.rds")
+  CALLCENTER = readRDS("Modeller/CALLCENTER.rds")
   df = input[[1]]
-  TIMESERIES$Datum_train = df$Datum
-  data = TIMESERIES$clean(TIMESERIES,
+  CALLCENTER$Datum_train = df$Datum
+  data = CALLCENTER$clean(CALLCENTER,
                           df$Y,
                           df$Datum)
   
   
   
-  TIMESERIES$TRAIN = data$val != -1
-  TIMESERIES$TEST = data$val == -1
-  TIMESERIES$LONG = T
+  CALLCENTER$TRAIN = data$val != -1
+  CALLCENTER$TEST = data$val == -1
+  CALLCENTER$LONG = T
 
-  TIMESERIES <- TIMESERIES$Train.model(TIMESERIES,
+  CALLCENTER <- CALLCENTER$Train.model(CALLCENTER,
                                        data,
-				       LONG = TIMESERIES$LONG)
+				       LONG = CALLCENTER$LONG)
   
   
-  data = TIMESERIES$predict(TIMESERIES,
-                            data, LONG = TIMESERIES$LONG)
+  data = CALLCENTER$predict(CALLCENTER,
+                            data, LONG = CALLCENTER$LONG)
   
   my_pred = round(data[data$val == -1,c("pred","pred_LQ","pred_UQ")])
   out = list()
@@ -83,8 +83,8 @@ function(input = "1") {
   out$Upper = my_pred$pred_UQ
   
   result_json <- toJSON(out)
-  saveRDS(TIMESERIES,
-          file = paste("Modeller/TIMESERIES_",df$ID,".rds",sep = ""))
+  saveRDS(CALLCENTER,
+          file = paste("Modeller/CALLCENTER_",df$ID,".rds",sep = ""))
   # Return the JSON result
   return(result_json)
 }
@@ -98,24 +98,24 @@ function(input = "1") {
 #* @param input json list
 #* @post /Train
 function(input = "1") {
-  TIMESERIES = readRDS("Modeller/TIMESERIES.rds")
+  CALLCENTER = readRDS("Modeller/CALLCENTER.rds")
   df = input[[1]]
-  TIMESERIES$Datum_train = df$Datum
-  data = TIMESERIES$clean(TIMESERIES,
+  CALLCENTER$Datum_train = df$Datum
+  data = CALLCENTER$clean(CALLCENTER,
                           df$Y,
                           df$Datum)
   
   
   
-  TIMESERIES$TRAIN = data$val != -1
-  TIMESERIES$TEST = data$val == -1
-  TIMESERIES$LONG = F
+  CALLCENTER$TRAIN = data$val != -1
+  CALLCENTER$TEST = data$val == -1
+  CALLCENTER$LONG = F
 
-  TIMESERIES <- TIMESERIES$Train.model(TIMESERIES,
+  CALLCENTER <- CALLCENTER$Train.model(CALLCENTER,
                                        data)
   
   
-  data = TIMESERIES$predict(TIMESERIES,
+  data = CALLCENTER$predict(CALLCENTER,
                             data)
   
   my_pred = round(data[data$val == -1,c("pred","pred_LQ","pred_UQ")])
@@ -125,8 +125,8 @@ function(input = "1") {
   out$Upper = my_pred$pred_UQ
   
   result_json <- toJSON(out)
-  saveRDS(TIMESERIES,
-          file = paste("Modeller/TIMESERIES_",df$ID,".rds",sep = ""))
+  saveRDS(CALLCENTER,
+          file = paste("Modeller/CALLCENTER_",df$ID,".rds",sep = ""))
   # Return the JSON result
   return(result_json)
 }
